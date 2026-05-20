@@ -300,3 +300,7 @@ The code includes:
 **Status**: ✅ Production Ready  
 
 Enjoy your new e-commerce platform! 🚀
+=======
+# NCTraders
+South African C2C E-Commerce Platform
+>>>>>>> f15470df167f9155281d5aa759e0952d72196f80
