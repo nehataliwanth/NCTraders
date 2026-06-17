@@ -133,9 +133,14 @@ function saveCart(cart) {
 }
 
 function updateCartCount() {
+  const cartCountElements = document.querySelectorAll('.cart-count');
+  if (!cartCountElements.length) return;
+
+  const hasServerCount = Array.from(cartCountElements).some(el => el.dataset.serverCount !== undefined);
+  if (hasServerCount) return;
+
   const cart = getCart();
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartCountElements = document.querySelectorAll('.cart-count');
 
   cartCountElements.forEach(element => {
     element.textContent = totalItems;

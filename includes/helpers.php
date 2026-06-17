@@ -76,7 +76,7 @@ function uploadFile($file, $directory = 'uploads/') {
 
 // Get average rating for product
 function getProductRating($productId) {
-    $result = getRow("SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE product_id = $productId AND status = 'approved'");
+    $result = getRow("SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM reviews WHERE product_id = $productId AND product_status = 'approved'");
     return $result;
 }
 
@@ -88,8 +88,15 @@ function getCartCount($userId) {
 
 // Get cart items
 function getCartItems($userId) {
+    $priceColumn = getColumnName('products', 'product_price', 'price');
+    $imageColumn = getColumnName('products', 'product_image', 'image_url');
+
     return getAllRows("
-        SELECT c.*, p.product_name, p.price, p.image_url 
+        SELECT c.*, p.product_name, p.$priceColumn AS price,
+               CASE
+                   WHEN p.$imageColumn LIKE 'http%' THEN p.$imageColumn
+                   ELSE CONCAT('uploads/products/', p.$imageColumn)
+               END AS image_url
         FROM cart c 
         JOIN products p ON c.product_id = p.id 
         WHERE c.user_id = $userId
@@ -98,8 +105,9 @@ function getCartItems($userId) {
 
 // Calculate cart total
 function getCartTotal($userId) {
+    $priceColumn = getColumnName('products', 'product_price', 'price');
     $result = getRow("
-        SELECT SUM(c.quantity * p.price) as total 
+        SELECT SUM(c.quantity * p.$priceColumn) as total 
         FROM cart c 
         JOIN products p ON c.product_id = p.id 
         WHERE c.user_id = $userId
@@ -111,7 +119,7 @@ function getCartTotal($userId) {
 function getFeaturedProducts($limit = 8) {
     return getAllRows("
         SELECT * FROM products 
-        WHERE status = 'active' 
+        WHERE product_status = 'Available' 
         ORDER BY review_count DESC, rating DESC
         LIMIT $limit
     ");
@@ -121,7 +129,7 @@ function getFeaturedProducts($limit = 8) {
 function getProductsByCategory($categoryId, $limit = 12, $offset = 0) {
     return getAllRows("
         SELECT * FROM products 
-        WHERE category_id = $categoryId AND status = 'active'
+        WHERE category_id = $categoryId AND product_status = 'Available'
         LIMIT $limit OFFSET $offset
     ");
 }
@@ -131,6 +139,13 @@ function getAllCategories() {
     return getAllRows("SELECT * FROM categories ORDER BY category_name ASC");
 }
 
+function getCategoryMinPrice($categoryId) {
+    $categoryId = intval($categoryId);
+    $priceColumn = getColumnName('products', 'product_price', 'price');
+    $result = getRow("SELECT MIN($priceColumn) AS min_price FROM products WHERE category_id = $categoryId");
+    return $result['min_price'] ?? null;
+}
+
 // Get category by slug
 function getCategoryBySlug($slug) {
     return getRow("SELECT * FROM categories WHERE slug = '" . escapeString($slug) . "'");
@@ -138,7 +153,7 @@ function getCategoryBySlug($slug) {
 
 // Get product by slug
 function getProductBySlug($slug) {
-    return getRow("SELECT * FROM products WHERE slug = '" . escapeString($slug) . "' AND status = 'active'");
+    return getRow("SELECT * FROM products WHERE slug = '" . escapeString($slug) . "' AND product_status = 'Available'");
 }
 
 // Get seller info

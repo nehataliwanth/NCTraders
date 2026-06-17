@@ -1,25 +1,78 @@
 <?php
 // Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'nctraders_db');
+define('DB_HOST', 'sql208.infinityfree.com');
+define('DB_USER', 'if0_41962454');
+define('DB_PASS', 'Nehachanney123');
+define('DB_NAME', 'if0_41962454_nctraders_db');
 
 // Create database connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+mysqli_query($conn, "SET time_zone = '+02:00'");
+date_default_timezone_set('Africa/Johannesburg');
 
 // Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Set charset to utf8
-$conn->set_charset("utf8");
+// Set charset to utf8mb4
+$conn->set_charset("utf8mb4");
 
 // Helper function to escape strings
 function escapeString($string) {
     global $conn;
     return $conn->real_escape_string($string);
+}
+
+function getTableColumns($table) {
+    global $conn;
+    static $columnsCache = [];
+
+    if (isset($columnsCache[$table])) {
+        return $columnsCache[$table];
+    }
+
+    $result = $conn->query("SHOW COLUMNS FROM `$table`");
+    $columns = [];
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $columns[] = $row['Field'];
+        }
+    }
+
+    $columnsCache[$table] = $columns;
+    return $columns;
+}
+
+function getColumnName($table, $preferred, $fallback) {
+    $columns = getTableColumns($table);
+    if (in_array($preferred, $columns, true)) {
+        return $preferred;
+    }
+    return in_array($fallback, $columns, true) ? $fallback : $preferred;
+}
+
+function normalizeProductRow($row) {
+    if (!is_array($row)) {
+        return $row;
+    }
+
+    if (isset($row['description']) && !isset($row['product_description'])) {
+        $row['product_description'] = $row['description'];
+    }
+    if (isset($row['price']) && !isset($row['product_price'])) {
+        $row['product_price'] = $row['price'];
+    }
+    if (isset($row['image_url']) && !isset($row['product_image'])) {
+        $row['product_image'] = $row['image_url'];
+    }
+
+    return $row;
+}
+
+function normalizeRow($row) {
+    return normalizeProductRow($row);
 }
 
 // Helper function to execute query
@@ -64,7 +117,7 @@ function executePreparedQuery($sql, $params = []) {
 function getRow($sql) {
     $result = executeQuery($sql);
     if ($result && $result->num_rows > 0) {
-        return $result->fetch_assoc();
+        return normalizeRow($result->fetch_assoc());
     }
     return null;
 }
@@ -75,7 +128,7 @@ function getAllRows($sql) {
     $rows = [];
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $rows[] = $row;
+            $rows[] = normalizeRow($row);
         }
     }
     return $rows;

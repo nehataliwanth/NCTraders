@@ -12,10 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $productId = intval($_POST['product_id'] ?? 0);
 
-    if ($action === 'delete' && $productId > 0) {
-        delete('products', ['id' => $productId, 'seller_id' => $currentUser['id']]);
-        $success = 'Product deleted successfully.';
-    }
+   if ($action === 'delete' && $productId > 0) {
+
+    delete('order_items', ['product_id' => $productId]);
+
+    delete('products', [
+        'id' => $productId,
+        'seller_id' => $currentUser['id']
+    ]);
+
+    $success = 'Product deleted successfully.';
+}
 
     if ($action === 'update' && $productId > 0) {
         $productName = sanitize($_POST['product_name'] ?? '');
@@ -23,30 +30,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $price = floatval($_POST['price'] ?? 0);
         $stock = intval($_POST['stock'] ?? 0);
         $description = sanitize($_POST['description'] ?? '');
-        $status = sanitize($_POST['status'] ?? 'active');
+        $status = sanitize($_POST['status'] ?? 'Available');
 
         if (empty($productName) || $categoryId <= 0 || $price <= 0) {
             $error = 'Please provide valid product details.';
         } else {
+            $descriptionColumn = getColumnName('products', 'product_description', 'description');
+            $priceColumn = getColumnName('products', 'product_price', 'price');
+            $imageColumn = getColumnName('products', 'product_image', 'image_url');
+
             $updateData = [
                 'product_name' => $productName,
                 'category_id' => $categoryId,
-                'description' => $description,
-                'price' => $price,
+                $descriptionColumn => $description,
+                $priceColumn => $price,
                 'stock' => $stock,
-                'status' => $status,
+                'product_status' => $status,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
-
             if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
                 $uploadResult = uploadFile($_FILES['image']);
                 if ($uploadResult['success']) {
-                    $updateData['image_url'] = $uploadResult['file_path'];
+                    $updateData[$imageColumn] = $uploadResult['file_path'];
                 } else {
                     $error = $uploadResult['message'];
                 }
             }
-
             if (!$error) {
                 update('products', $updateData, ['id' => $productId, 'seller_id' => $currentUser['id']]);
                 $success = 'Product updated successfully.';
@@ -130,8 +139,8 @@ $sellerProducts = getSellerProducts($currentUser['id']);
                         ?>
                             <tr>
                                 <td style="width: 90px;">
-                                    <?php if ($product['image_url']): ?>
-                                        <img src="<?php echo htmlspecialchars($product['image_url']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>" class="img-fluid rounded" style="max-height: 60px;">
+                                    <?php if ($product['product_image']): ?>
+                                        <img src="<?php echo htmlspecialchars(strpos($product['product_image'], 'http') === 0 ? $product['product_image'] : 'uploads/products/' . $product['product_image']); ?>" alt="<?php echo htmlspecialchars($product['product_name']); ?>" class="img-fluid rounded" style="max-height: 60px;">
                                     <?php else: ?>
                                         <div class="border rounded d-flex align-items-center justify-content-center" style="width: 90px; height: 60px; background:#f8f9fa;">
                                             <i class="fas fa-image text-muted"></i>
@@ -143,9 +152,11 @@ $sellerProducts = getSellerProducts($currentUser['id']);
                                 <td><?php echo formatCurrency($product['price']); ?></td>
                                 <td><?php echo intval($product['stock']); ?></td>
                                 <td>
-                                    <span class="badge bg-<?php echo $product['status'] === 'active' ? 'success' : ($product['status'] === 'out_of_stock' ? 'danger' : 'secondary'); ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $product['status'])); ?>
-                                    </span>
+                                    <span class="badge bg-<?php echo $product['product_status'] === 'Sold Out' ? 'danger' : 'success'; ?>">
+
+<?php echo htmlspecialchars($product['product_status']); ?>
+
+</span>
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#edit-<?php echo $product['id']; ?>">
@@ -154,8 +165,13 @@ $sellerProducts = getSellerProducts($currentUser['id']);
                                     <form method="POST" class="d-inline">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this product?');">
-                                            <i class="fas fa-trash"></i>
+                                        <button type="button"
+class="btn btn-sm btn-danger delete-product-btn"
+data-product-id="<?php echo $product['id']; ?>">
+
+<i class="fas fa-trash"></i>
+
+</button>
                                         </button>
                                     </form>
                                 </td>
@@ -192,14 +208,22 @@ $sellerProducts = getSellerProducts($currentUser['id']);
                                                 <div class="col-md-3">
                                                     <label class="form-label">Status</label>
                                                     <select class="form-select" name="status">
-                                                        <option value="active" <?php echo $product['status'] === 'active' ? 'selected' : ''; ?>>Active</option>
-                                                        <option value="inactive" <?php echo $product['status'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                                                        <option value="out_of_stock" <?php echo $product['status'] === 'out_of_stock' ? 'selected' : ''; ?>>Out of Stock</option>
+                                   <option value="Available" <?php echo $product['product_status'] === 'Available' ? 'selected' : ''; ?>>
+
+Available
+
+</option>
+
+<option value="Sold Out" <?php echo $product['product_status'] === 'Sold Out' ? 'selected' : ''; ?>>
+
+Sold Out
+
+</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-12">
                                                     <label class="form-label">Description</label>
-                                                    <textarea class="form-control" name="description" rows="3"><?php echo htmlspecialchars($product['description']); ?></textarea>
+                                                    <textarea class="form-control" name="description" rows="3"><?php echo htmlspecialchars($product['product_description']); ?></textarea>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Image (optional)</label>
@@ -229,5 +253,92 @@ $sellerProducts = getSellerProducts($currentUser['id']);
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<div id="deleteModal" class="custom-modal">
+
+    <div class="custom-modal-content">
+
+        <h4>Delete Product</h4>
+
+        <p>
+            Are you sure you want to delete this product?
+        </p>
+
+        <div class="modal-buttons">
+
+            <button id="cancelDelete"
+            class="btn btn-secondary">
+
+                No
+
+            </button>
+
+            <button id="confirmDelete"
+            class="btn btn-danger">
+
+                Yes, Delete
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+<script>
+
+let productToDelete = null;
+
+document.querySelectorAll('.delete-product-btn')
+.forEach(button => {
+
+    button.addEventListener('click', function(){
+
+        productToDelete =
+        this.dataset.productId;
+
+        document
+        .getElementById('deleteModal')
+        .classList.add('show');
+
+    });
+
+});
+
+document
+.getElementById('cancelDelete')
+.addEventListener('click', function(){
+
+    document
+    .getElementById('deleteModal')
+    .classList.remove('show');
+
+});
+
+document
+.getElementById('confirmDelete')
+.addEventListener('click', function(){
+
+    const form =
+    document.createElement('form');
+
+    form.method = 'POST';
+
+    form.innerHTML = `
+        <input type="hidden"
+        name="action"
+        value="delete">
+
+        <input type="hidden"
+        name="product_id"
+        value="${productToDelete}">
+    `;
+
+    document.body.appendChild(form);
+
+    form.submit();
+
+});
+
+</script>
 </body>
 </html>

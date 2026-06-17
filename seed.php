@@ -85,80 +85,80 @@ $products = [
         'category_id' => $electronicsCategory['id'],
         'product_name' => 'Wireless Bluetooth Headphones',
         'slug' => 'wireless-bluetooth-headphones',
-        'description' => 'Premium quality wireless headphones with noise cancellation and 30-hour battery life',
-        'price' => 2500.00,
+        'product_description' => 'Premium quality wireless headphones with noise cancellation and 30-hour battery life',
+        'product_price' => 2500.00,
         'stock' => 15,
-        'image_url' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $electronicsCategory['id'],
         'product_name' => 'Smartphone Stand',
         'slug' => 'smartphone-stand',
-        'description' => 'Adjustable phone stand for desk, perfect for video calls and streaming',
-        'price' => 450.00,
+        'product_description' => 'Adjustable phone stand for desk, perfect for video calls and streaming',
+        'product_price' => 450.00,
         'stock' => 30,
-        'image_url' => 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1527814050087-3793815479db?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $fashionCategory['id'],
         'product_name' => 'Classic White T-Shirt',
         'slug' => 'classic-white-tshirt',
-        'description' => '100% cotton classic white t-shirt, comfortable and versatile',
-        'price' => 350.00,
+        'product_description' => '100% cotton classic white t-shirt, comfortable and versatile',
+        'product_price' => 350.00,
         'stock' => 50,
-        'image_url' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $fashionCategory['id'],
         'product_name' => 'Running Shoes',
         'slug' => 'running-shoes',
-        'description' => 'Professional running shoes with cushioned sole and breathable mesh',
-        'price' => 1800.00,
+        'product_description' => 'Professional running shoes with cushioned sole and breathable mesh',
+        'product_price' => 1800.00,
         'stock' => 20,
-        'image_url' => 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $homeCategory['id'],
         'product_name' => 'Wooden Coffee Table',
         'slug' => 'wooden-coffee-table',
-        'description' => 'Beautiful solid wood coffee table with modern design',
-        'price' => 4500.00,
+        'product_description' => 'Beautiful solid wood coffee table with modern design',
+        'product_price' => 4500.00,
         'stock' => 8,
-        'image_url' => 'https://images.unsplash.com/photo-1533090161767-e6ffb817ba2b?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1533090161767-e6ffb817ba2b?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $homeCategory['id'],
         'product_name' => 'LED Desk Lamp',
         'slug' => 'led-desk-lamp',
-        'description' => 'Modern LED desk lamp with adjustable brightness and color temperature',
-        'price' => 1200.00,
+        'product_description' => 'Modern LED desk lamp with adjustable brightness and color temperature',
+        'product_price' => 1200.00,
         'stock' => 25,
-        'image_url' => 'https://images.unsplash.com/photo-1565636192335-14e9952f765e?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1565636192335-14e9952f765e?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $electronicsCategory['id'],
         'product_name' => 'USB-C Fast Charging Cable',
         'slug' => 'usb-c-fast-charging-cable',
-        'description' => '2-meter USB-C cable with fast charging support, durable and reliable',
-        'price' => 250.00,
+        'product_description' => '2-meter USB-C cable with fast charging support, durable and reliable',
+        'product_price' => 250.00,
         'stock' => 100,
-        'image_url' => 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400'
     ],
     [
         'seller_id' => $sellerId,
         'category_id' => $fashionCategory['id'],
         'product_name' => 'Sports Backpack',
         'slug' => 'sports-backpack',
-        'description' => 'Waterproof sports backpack with multiple compartments and USB charging port',
-        'price' => 1500.00,
+        'product_description' => 'Waterproof sports backpack with multiple compartments and USB charging port',
+        'product_price' => 1500.00,
         'stock' => 18,
-        'image_url' => 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400'
+        'product_image' => 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400'
     ]
 ];
 

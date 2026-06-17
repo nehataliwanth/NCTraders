@@ -1,340 +1,385 @@
 <?php
 require_once 'config/session.php';
 require_once 'includes/helpers.php';
+include 'config/database.php';
 
-$currentUser = getCurrentUser();
+$currentUser = getCurrentUser(); 
+/* UNREAD MESSAGES */
+
+$unreadMessages = 0;
+
+if($currentUser){
+
+    $userId = $currentUser['id'];
+
+    $messageQuery = mysqli_query($conn,
+
+    "SELECT COUNT(*) AS total
+
+    FROM messages
+
+    WHERE receiver_id='$userId'
+
+    AND is_read='0'"
+
+    );
+
+    $messageData = mysqli_fetch_assoc($messageQuery);
+
+    $unreadMessages = $messageData['total'];
+}
 $categories = getAllCategories();
-$featuredProducts = getFeaturedProducts(8);
+
+if($searchTerm != ""){
+
+    $escapedSearch = mysqli_real_escape_string(
+    $conn,
+    $searchTerm
+    );
+
+    $whereSql = "
+
+    WHERE
+
+    products.product_name LIKE '%$escapedSearch%'
+
+    OR
+
+    products.product_description LIKE '%$escapedSearch%'
+
+    ";
+}
+
+$sql = "SELECT products.*, users.username AS seller_name
+
+FROM products
+
+JOIN users
+ON products.seller_id = users.id
+
+
+
+ORDER BY products.id DESC";
+
+$result = mysqli_query($conn, $sql);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NC Traders - Buy and Sell Quality Products</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+<title>NC Traders</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="stylesheet" href="assets/css/style.css">
+
 </head>
 <body>
+<?php include 'includes/navbar.php'; ?>
+<!-- HERO -->
 
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-        <div class="container">
+<section class="hero-section" style="margin-top:-90px;">
 
-            <a class="navbar-brand fw-bold" href="index.php">
-                <i class="fas fa-store"></i> NC Traders
-            </a>
+<div class="hero-overlay"></div>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<div class="container hero-content">
 
-            <div class="collapse navbar-collapse" id="navbarNav">
+<div class="row align-items-center">
 
-                <form class="d-flex mx-auto w-50" action="product.php" method="GET">
-                    <input class="form-control me-2" type="search" name="search" placeholder="Search products...">
-                    <button class="btn btn-warning" type="submit">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                </form>
+<div class="col-lg-6">
 
-                <ul class="navbar-nav ms-auto">
+<div class="hero-badge">
+South African Marketplace Platform
+</div>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="product.php">Products</a>
-                    </li>
+<h1 class="hero-title">
+Buy & Sell Locally with Confidence
+</h1>
 
-                    <?php if ($currentUser && isSeller()): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="dashboard.php">Dashboard</a>
-                        </li>
-                    <?php endif; ?>
+<p class="hero-text">
+Empowering township entrepreneurs, side hustlers,
+and everyday South Africans through safe online trading.
+</p>
 
-                    <?php if ($currentUser && isAdmin()): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="admin/dashboard.php">Admin</a>
-                        </li>
-                    <?php endif; ?>
+<div class="hero-buttons">
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="cart.php">
-                            <i class="fas fa-shopping-cart"></i> Cart
-                            <?php if ($currentUser): ?>
-                                <span class="badge bg-danger cart-count">0</span>
-                            <?php endif; ?>
-                        </a>
-                    </li>
+<a href="add-product.php" class="btn btn-warning btn-lg hero-btn">
 
-                    <?php if ($currentUser): ?>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> <?php echo htmlspecialchars($currentUser['first_name'] ?? $currentUser['username']); ?>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="dashboard.php">Dashboard</a></li>
-                                <li><a class="dropdown-item" href="orders.php">My Orders</a></li>
-                                <li><a class="dropdown-item" href="wishlist.php">Wishlist</a></li>
-                                <li><a class="dropdown-item" href="messages.php">Messages</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="profile.php">Profile Settings</a></li>
-                                <li><a class="dropdown-item" href="logout.php">Logout</a></li>
-                            </ul>
-                        </li>
-                    <?php else: ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="login.php">
-                                <i class="fas fa-sign-in-alt"></i> Login
-                            </a>
-                        </li>
+<i class="fas fa-store"></i>
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="register.php">
-                                <i class="fas fa-user-plus"></i> Register
-                            </a>
-                        </li>
-                    <?php endif; ?>
+Start Selling
 
-                </ul>
+</a>
 
-            </div>
-        </div>
-    </nav>
+<a href="products.php" class="btn btn-light btn-lg hero-btn-secondary">
 
+<i class="fas fa-bag-shopping"></i>
 
-    <!-- HERO SECTION -->
-    <section class="hero-section text-white d-flex align-items-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <div class="container text-center">
+Browse Products
 
-            <h1 class="display-4 fw-bold">
-                Welcome to NC Traders
-            </h1>
+</a>
 
-            <p class="lead">
-                Buy and sell quality products from trusted sellers
-            </p>
+</div>
 
-            <div class="mt-4">
-                <a href="product.php" class="btn btn-warning btn-lg me-2">
-                    <i class="fas fa-shopping-bag"></i> Shop Now
-                </a>
-                <?php if (!$currentUser): ?>
-                    <a href="register.php" class="btn btn-light btn-lg">
-                        <i class="fas fa-user-tie"></i> Become a Seller
-                    </a>
-                <?php else: ?>
-                    <a href="dashboard.php" class="btn btn-light btn-lg">
-                        <i class="fas fa-tachometer-alt"></i> Go to Dashboard
-                    </a>
-                <?php endif; ?>
-            </div>
+<div class="hero-stats mt-5">
 
-        </div>
-    </section>
+<div class="stat-card">
+<h3>5K+</h3>
+<p>Products</p>
+</div>
 
-    <!-- CATEGORIES -->
-    <section class="py-5">
-        <div class="container">
+<div class="stat-card">
+<h3>2K+</h3>
+<p>Sellers</p>
+</div>
 
-            <h2 class="mb-4 text-center fw-bold">
-                Shop by Category
-            </h2>
+<div class="stat-card">
+<h3>100%</h3>
+<p>Local</p>
+</div>
 
-            <?php if (empty($categories)): ?>
-                <div class="alert alert-info text-center">
-                    <p>No categories available yet.</p>
-                </div>
-            <?php else: ?>
-                <div class="row g-4">
-                    <?php foreach ($categories as $category): ?>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <a href="product.php?category=<?php echo urlencode($category['slug']); ?>" class="text-decoration-none">
-                                <div class="category-card p-4 text-center rounded-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; transition: transform 0.3s ease;">
-                                    <?php if ($category['image_url']): ?>
-                                        <img src="<?php echo htmlspecialchars($category['image_url']); ?>" alt="<?php echo htmlspecialchars($category['category_name']); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">
-                                    <?php else: ?>
-                                        <div style="font-size: 3rem; margin-bottom: 1rem;">
-                                            <i class="fas fa-box"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                    <h5 class="text-white fw-bold"><?php echo htmlspecialchars($category['category_name']); ?></h5>
-                                </div>
-                            </a>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+</div>
 
-        </div>
-    </section>
+</div>
+<div class="col-lg-6">
 
-    <!-- FEATURED PRODUCTS -->
-    <section class="py-5 bg-light">
-        <div class="container">
+<div class="floating-market-card">
 
-            <h2 class="mb-4 text-center fw-bold">
-                Featured Products
-            </h2>
+<img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1200&auto=format&fit=crop"
+class="market-image">
 
-            <?php if (empty($featuredProducts)): ?>
-                <div class="alert alert-info text-center">
-                    <p>No products available yet. Check back soon!</p>
-                </div>
-            <?php else: ?>
-                <div class="row g-4">
-                    <?php foreach ($featuredProducts as $product): 
-                        $rating = getProductRating($product['id']);
-                        $seller = getUserById($product['seller_id']);
-                    ?>
-                        <!-- PRODUCT CARD -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card product-card h-100 shadow-sm" data-product-id="<?php echo $product['id']; ?>" data-price="<?php echo $product['price']; ?>" data-name="<?php echo htmlspecialchars($product['product_name']); ?>">
+</div>
 
-                                <div class="product-image position-relative">
-                                    <?php if ($product['image_url']): ?>
-                                        <img src="<?php echo htmlspecialchars($product['image_url']); ?>" 
-                                             class="card-img-top" 
-                                             alt="<?php echo htmlspecialchars($product['product_name']); ?>"
-                                             style="height: 200px; object-fit: cover;">
-                                    <?php else: ?>
-                                        <div style="height: 200px; display: flex; align-items: center; justify-content: center; background: #f0f0f0; color: #999;">
-                                            <i class="fas fa-image" style="font-size: 3rem;"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if ($product['stock'] == 0): ?>
-                                        <span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>
-                                    <?php endif; ?>
-                                </div>
+</div>
 
-                                <div class="card-body d-flex flex-column">
+</div>
 
-                                    <h5 class="card-title">
-                                        <?php echo truncateText($product['product_name'], 50); ?>
-                                    </h5>
+</div>
 
-                                    <p class="text-muted small">
-                                        Seller: <?php echo htmlspecialchars($seller['username'] ?? 'Unknown'); ?>
-                                    </p>
+</section>
 
-                                    <p class="text-muted small">
-                                        <?php 
-                                        $avgRating = round($rating['avg_rating'] ?? 0, 1);
-                                        for ($i = 0; $i < 5; $i++):
-                                            if ($i < $avgRating):
-                                                echo '<i class="fas fa-star text-warning"></i> ';
-                                            else:
-                                                echo '<i class="far fa-star"></i> ';
-                                            endif;
-                                        endfor;
-                                        echo ' (' . ($rating['review_count'] ?? 0) . ')';
-                                        ?>
-                                    </p>
+<!-- FEATURES -->
 
-                                    <p class="card-text text-muted flex-grow-1">
-                                        <?php echo truncateText($product['description'] ?? '', 80); ?>
-                                    </p>
+<section class="features-section">
 
-                                    <h4 class="text-success fw-bold">
-                                        <?php echo formatCurrency($product['price']); ?>
-                                    </h4>
+<div class="container">
 
-                                    <div class="d-grid gap-2">
-                                        <a href="product.php?slug=<?php echo urlencode($product['slug']); ?>" class="btn btn-dark">
-                                            <i class="fas fa-eye"></i> View Details
-                                        </a>
-                                        <?php if ($product['stock'] > 0): ?>
-                                            <button class="btn btn-warning" onclick="addToCart(this)" 
-                                                data-product-id="<?php echo $product['id']; ?>"
-                                                data-product-name="<?php echo htmlspecialchars($product['product_name']); ?>"
-                                                data-product-price="<?php echo $product['price']; ?>"
-                                                data-product-image="<?php echo htmlspecialchars($product['image_url']); ?>">
-                                                <i class="fas fa-cart-plus"></i> Add to Cart
-                                            </button>
-                                        <?php endif; ?>
-                                    </div>
+<div class="row g-4">
 
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+<div class="col-md-4">
 
-                <div class="text-center mt-5">
-                    <a href="product.php" class="btn btn-primary btn-lg">
-                        <i class="fas fa-th"></i> View All Products
-                    </a>
-                </div>
-            <?php endif; ?>
+<div class="feature-box">
 
-        </div>
-    </section>
+<div class="feature-icon">
+<i class="fas fa-shield"></i>
+</div>
 
-    <!-- FOOTER -->
-    <footer class="bg-dark text-white py-5 mt-5">
-        <div class="container">
+<h4>Secure Marketplace</h4>
 
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <h5><i class="fas fa-store"></i> NC Traders</h5>
-                    <p class="text-muted">Your trusted marketplace for quality products from verified sellers.</p>
-                </div>
+<p>
+Safer buying and selling with trusted product listings.
+</p>
 
-                <div class="col-md-3">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled text-muted">
-                        <li><a href="index.php" class="text-decoration-none text-muted">Home</a></li>
-                        <li><a href="product.php" class="text-decoration-none text-muted">Products</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">About Us</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Contact</a></li>
-                    </ul>
-                </div>
+</div>
 
-                <div class="col-md-3">
-                    <h5>Customer Service</h5>
-                    <ul class="list-unstyled text-muted">
-                        <li><a href="#" class="text-decoration-none text-muted">Help Center</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Shipping Info</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">Returns</a></li>
-                        <li><a href="#" class="text-decoration-none text-muted">FAQ</a></li>
-                    </ul>
-                </div>
+</div>
 
-                <div class="col-md-3">
-                    <h5>Follow Us</h5>
-                    <div class="d-flex gap-2">
-                        <a href="#" class="text-muted"><i class="fab fa-facebook fa-lg"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-twitter fa-lg"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="#" class="text-muted"><i class="fab fa-linkedin fa-lg"></i></a>
-                    </div>
-                </div>
-            </div>
+<div class="col-md-4">
 
-            <hr class="bg-secondary">
+<div class="feature-box">
 
-            <div class="text-center text-muted">
-                <p>&copy; 2026 NC Traders. All rights reserved.</p>
-            </div>
+<div class="feature-icon">
+<i class="fas fa-bolt"></i>
+</div>
 
-        </div>
-    </footer>
+<h4>Fast Selling</h4>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<p>
+Upload products and start selling instantly online.
+</p>
 
-    <!-- Custom JS -->
-    <script src="assets/js/script.js"></script>
+</div>
 
-    <script>
-        // Initialize cart count on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            updateCartCount();
-        });
-    </script>
+</div>
 
+<div class="col-md-4">
+
+<div class="feature-box">
+
+<div class="feature-icon">
+<i class="fas fa-users"></i>
+</div>
+
+<h4>Built For Locals</h4>
+
+<p>
+Created specifically for South African township businesses.
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<footer class="footer-section text-center">
+
+<div class="container">
+
+<img src="assets/images/logo.png"
+style="
+width:250px;
+height:250px;
+object-fit:contain;
+margin-bottom:25px;
+">
+
+<h2 class="fw-bold mb-3 text-white">
+
+NC Traders
+
+</h2>
+
+<p class="footer-slogan mb-4">
+
+South Africa's trusted digital marketplace for South African entrepreneurs.
+
+</p>
+
+<hr class="border-secondary">
+
+<p class="mt-4 mb-0 text-white">
+
+© 2026 NC Traders. All Rights Reserved.
+
+</p>
+
+</div>
+
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+const searchInput = document.getElementById("searchInput");
+
+const historyBox = document.getElementById("searchHistory");
+
+let searches =
+JSON.parse(localStorage.getItem("searchHistory")) || [];
+
+function renderHistory(){
+
+historyBox.innerHTML = "";
+
+if(searches.length === 0){
+
+historyBox.classList.add("d-none");
+
+return;
+
+}
+
+searches.forEach((item,index)=>{
+
+historyBox.innerHTML += `
+
+<div class="search-history-item">
+
+<span onclick="selectSearch('${item}')">
+
+${item}
+
+</span>
+
+<span class="search-remove"
+onclick="removeSearch(${index})">
+
+✕
+
+</span>
+
+</div>
+
+`;
+
+});
+
+historyBox.classList.remove("d-none");
+}
+
+searchInput.addEventListener("focus",()=>{
+
+renderHistory();
+
+});
+
+document.addEventListener("click",(e)=>{
+
+if(!e.target.closest(".search-wrapper")){
+
+historyBox.classList.add("d-none");
+
+}
+
+});
+
+function selectSearch(value){
+
+searchInput.value = value;
+
+historyBox.classList.add("d-none");
+}
+
+function removeSearch(index){
+
+searches.splice(index,1);
+
+localStorage.setItem(
+"searchHistory",
+JSON.stringify(searches)
+);
+
+renderHistory();
+}
+
+document.querySelector(".search-form")
+.addEventListener("submit",(e)=>{
+
+const value = searchInput.value.trim();
+
+if(value !== ""){
+
+searches = searches.filter(
+item => item !== value
+);
+
+searches.unshift(value);
+
+searches = searches.slice(0,8);
+
+localStorage.setItem(
+"searchHistory",
+JSON.stringify(searches)
+);
+}
+
+});
+
+</script>
 </body>
 </html>

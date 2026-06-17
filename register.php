@@ -8,7 +8,6 @@ $username = '';
 $email = '';
 $firstName = '';
 $lastName = '';
-$role = 'Buyer';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = sanitize($_POST['username'] ?? '');
@@ -17,12 +16,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirmPassword = $_POST['confirm_password'] ?? '';
     $firstName = sanitize($_POST['first_name'] ?? '');
     $lastName = sanitize($_POST['last_name'] ?? '');
-    $role = sanitize($_POST['role'] ?? 'Buyer');
 
-    $roleId = $role === 'Seller' ? 3 : 4;
+$phone = sanitize($_POST['phone'] ?? '');
+
+$roleId = 4;
 
     // Validation
-    if (empty($username) || empty($email) || empty($password) || empty($confirmPassword)) {
+    if (
+empty($username)
+|| empty($email)
+|| empty($phone)
+|| empty($password)
+|| empty($confirmPassword)
+) {
         $error = 'All fields are required';
     } elseif (!validateEmail($email)) {
         $error = 'Invalid email address';
@@ -31,7 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($password !== $confirmPassword) {
         $error = 'Passwords do not match';
     } else {
-        $result = registerUser($username, $email, $password, $firstName, $lastName, $roleId);
+        $result = registerUser(
+$username,
+$email,
+$password,
+$firstName,
+$lastName,
+$phone,
+);
         if ($result['success']) {
             $success = 'Registration successful! Please log in.';
             header('Location: login.php?registered=true');
@@ -98,17 +111,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <small class="text-muted">Must be unique</small>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Account Type</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="role" id="buyerRole" value="Buyer" <?php echo $role === 'Buyer' ? 'checked' : ''; ?>>
-                                    <label class="form-check-label" for="buyerRole">Buyer</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="role" id="sellerRole" value="Seller" <?php echo $role === 'Seller' ? 'checked' : ''; ?>>
-                                    <label class="form-check-label" for="sellerRole">Seller</label>
-                                </div>
-                                <small class="text-muted">Choose 'Seller' if you want to upload products.</small>
-                            </div>
+
+<label for="phone"
+class="form-label">
+
+Phone Number
+<span class="text-danger">*</span>
+
+</label>
+
+<input type="text"
+class="form-control"
+id="phone"
+name="phone"
+placeholder="0841234567"
+required>
+
+</div>
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
                                 <input type="email" class="form-control" id="email" name="email" placeholder="john@example.com" required value="<?php echo htmlspecialchars($email); ?>">
@@ -124,7 +143,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="confirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
                                 <input type="password" class="form-control" id="confirmPassword" name="confirm_password" placeholder="Re-enter password" required>
                             </div>
+<div class="form-check mb-4">
 
+<input class="form-check-input"
+type="checkbox"
+name="terms"
+id="terms"
+required>
+
+<label class="form-check-label"
+for="terms">
+
+I agree to the
+
+<a href="terms.php">
+
+Terms & Conditions
+
+</a>
+
+and
+
+<a href="privacy-policy.php">
+
+Privacy Policy
+
+</a>
+
+</label>
+
+</div>
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
                                 <i class="fas fa-user-check"></i> Register
                             </button>
